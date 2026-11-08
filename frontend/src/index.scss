@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  // Fonts and type scale
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-axis: 'DM Sans', sans-serif;
+  --font-heading: Manrope, sans-serif;
+  --font-size-2xs: 10px;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 15px;
+  --font-size-xl: 16px;
+  --font-size-2xl: 18px;
+  --font-size-3xl: 19px;
+  --font-size-4xl: 21px;
+  --font-size-5xl: 23px;
+  --font-size-6xl: 32px;
+  --font-size-hero: clamp(36px, 4.2vw, 58px);
+  --font-size-section-heading: clamp(24px, 2.4vw, 33px);
+  --font-size-selected-heading: clamp(23px, 2.1vw, 29px);
+  --font-size-stat-value: clamp(32px, 3.3vw, 45px);
+  --font-size-heading-sun: .66em;
+
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --tracking-brand: -1.4px;
+  --tracking-tight: -.065em;
+  --tracking-section: -.055em;
+  --tracking-reading: -.05em;
+  --tracking-chart-heading: -.04em;
+  --tracking-overline: .18em;
+  --tracking-live: .08em;
+
+  // Surfaces, text, and accents
+  --color-page: #f7f8f5;
+  --color-surface: #fff;
+  --color-text: #26383b;
+  --color-heading: #24383b;
+  --color-brand: #243c3e;
+  --color-brand-mark: #3b7568;
+  --color-brand-mark-bg: #dbeadf;
+  --color-accent: #e4774e;
+  --color-sensor-1: #e4774e;
+  --color-sensor-2: #5698ad;
+  --color-sensor-3: #8a9c60;
+  --color-sensor-4: #a984ba;
+  --color-sensor-5: #d4a64f;
+  --color-sensor-6: #6885c6;
+  --color-sun: #e9ab57;
+  --color-text-muted: #849391;
+  --color-overline: #779488;
+  --color-badge-text: #687e7d;
+  --color-live: #79ae87;
+  --color-live-halo: #e3f1e6;
+  --color-section-caption: #8a9994;
+  --color-selected-caption: #8b9a95;
+  --color-reading-time: #9aaba4;
+  --color-reading-value: #273e40;
+  --color-footer-muted: #9cac9e;
+  --color-error: #bd624e;
+
+  // Reading cards and bubbles
+  --color-temperature-card: #f8eae2;
+  --color-temperature-card-text: #bb694d;
+  --color-humidity-card: #e4f1f1;
+  --color-humidity-card-text: #4c8ca3;
+  --color-battery-card: #e9eee1;
+  --color-battery-card-text: #779355;
+  --color-icon-surface: #ffffffa8;
+  --color-temperature-bubble: #fbede5;
+  --color-temperature-bubble-text: #b96e50;
+  --color-humidity-bubble: #e7f2f2;
+  --color-humidity-bubble-text: #548fa4;
+  --color-battery-bubble: #edf2e6;
+  --color-battery-bubble-text: #829958;
+
+  // Chart and controls
+  --color-chart-unit: #a9b2af;
+  --color-chart-range: #788e88;
+  --color-chart-range-bg: #f5f8f5;
+  --color-metric-tab: #a0b1aa;
+  --color-control-bg: #f4f7f3;
+  --color-control-active-bg: #fcf0e9;
+  --color-control-text: #7b9188;
+  --color-control-strong: #263e3e;
+  --color-grid: #e9eee9;
+  --color-axis: #9baaa4;
+  --color-marker: #304d50;
+  --color-chart-message: #778d85;
+  --color-chart-message-bg: #ffffffec;
+  --color-legend-text: #526460;
+  --color-legend-empty: #9aa9a2;
+  --color-legend-hint: #a5b1aa;
+  --color-shadow-card: #34473a08;
+  --color-shadow-control: #263e3e14;
+
+  // Borders, focus, and selection
+  --color-border-layout: #e5e9e3;
+  --color-border-badge: #e3e9e3;
+  --color-border-card: #e9ede7;
+  --color-border-divider: #eef1ec;
+  --color-border-legend-dot: #e4eae4;
+  --color-focus: #4d92b3;
+  --color-selection: #d7e7dd;
+  --border-layout: 1px solid var(--color-border-layout);
+  --border-badge: 1px solid var(--color-border-badge);
+  --border-card: 1px solid var(--color-border-card);
+  --border-divider: 1px solid var(--color-border-divider);
+  --border-legend-dot: 3px solid var(--color-surface);
+  --outline-focus: 3px solid var(--color-focus);
+  --radius-notch: 3px 3px 7px 3px;
+  --radius-button: 8px;
+  --radius-range: 9px;
+  --radius-message: 10px;
+  --radius-control: 11px;
+  --radius-tab: 12px;
+  --radius-icon: 14px;
+  --radius-mobile-card: 18px;
+  --radius-reading: 20px;
+  --radius-card: 24px;
+  --radius-pill: 100px;
+  --radius-circle: 50%;
+
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible,
+[role='slider']:focus-visible {
+  outline: var(--outline-focus);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--color-selection);
+}

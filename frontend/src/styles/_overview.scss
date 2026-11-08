@@ -1,0 +1,90 @@
+.overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+
+  @media (max-width: 600px) {
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.stat-card {
+  border-radius: var(--radius-card);
+  min-height: 205px;
+  padding: 23px 25px 21px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+
+  @media (max-width: 600px) {
+    min-height: 178px;
+    padding: 17px;
+    border-radius: var(--radius-mobile-card);
+
+    &:last-child {
+      grid-column: span 2;
+      min-height: 145px;
+    }
+  }
+}
+
+.stat-temperature {
+  background: var(--color-temperature-card);
+  color: var(--color-temperature-card-text);
+}
+
+.stat-humidity {
+  background: var(--color-humidity-card);
+  color: var(--color-humidity-card-text);
+}
+
+.stat-battery {
+  background: var(--color-battery-card);
+  color: var(--color-battery-card-text);
+}
+
+.stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  opacity: .8;
+}
+
+.stat-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  background: var(--color-icon-surface);
+  border-radius: var(--radius-icon);
+}
+
+.stat-label {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+  margin: 0 0 3px;
+}
+
+.stat-value {
+  font-family: var(--font-heading);
+  color: var(--color-heading);
+  font-size: var(--font-size-stat-value);
+  font-weight: var(--font-weight-extrabold);
+  line-height: 1.22;
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+
+  @media (max-width: 600px) {
+    font-size: var(--font-size-6xl);
+  }
+}
+
+
+.stat-caption {
+  font-size: var(--font-size-sm);
+  opacity: .85;
+  margin: 4px 0 0;
+}
+
