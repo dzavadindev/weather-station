@@ -1,15 +1,10 @@
 # Weather Station
 
-**Active work in progress.** Weather Station is a project for growing plants indoors and outdoors. It collects temperature and humidity data to help make better plant-care decisions over time.
-
-## What works today
-
-- A FastAPI backend registers sensors and stores readings in a local SQLite database.
-- A React and TypeScript dashboard provides an overview and historical charts for sensor readings.
+**Active work in progress.** Weather Station is a project for growing plants indoors and outdoors. It collects temperature and humidity data from [UNNI sensors](https://unni.store/products/wireless-weather-stations-0585) to help make better plant-care decisions over time.
 
 ## Run locally
 
-You'll need [uv](https://docs.astral.sh/uv/), Python 3.14 or newer, Node.js, and Yarn. From the repository root, use two terminals:
+You'll need [uv](https://docs.astral.sh/uv/), Python 3.14 or newer, Node.js, and Yarn.
 
 **Backend**
 
@@ -28,9 +23,7 @@ yarn install
 yarn dev
 ```
 
-Vite typically serves the dashboard at http://localhost:5173. During development, it proxies `/api` requests to the backend on port 8000, so keep both running.
-
-**Current integration gap:** the frontend requests `/api/sensor-data`, but the backend exposes `GET /api/sensor/data`. Both apps start locally, but the dashboard cannot load live readings until these endpoints are aligned.
+Vite serves the dashboard at http://localhost:5173. During development, it proxies `/api` requests to the backend on port 8000, so keep both running.
 
 ## Checks
 
