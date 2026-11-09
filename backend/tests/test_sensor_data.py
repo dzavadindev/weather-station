@@ -6,8 +6,8 @@ from contextlib import closing
 from datetime import UTC, datetime
 from itertools import pairwise
 from pathlib import Path
-from uuid import UUID
 from unittest.mock import patch
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 
@@ -76,6 +76,40 @@ class SensorDataTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/sensor/data", params={"date": midnight}).json(), records[:2])
         self.assertEqual(self.client.get("/api/sensor/data?date=bad").status_code, 422)
         self.assertEqual(self.client.get("/api/sensor/data?filter=bad").status_code, 422)
+
+    def test_get_filtered_by_time_range(self):
+        first = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
+        second = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"
+        for uuid in (first, second):
+            self.client.post("/api/sensor/register", json={"uuid": uuid})
+        midnight = int(datetime(2025, 1, 2, tzinfo=UTC).timestamp() * 1000)
+        records = [
+            {"uuid": first, "humidity": 0.4, "temperature": 20.0, "battery": 0.9, "timestamp": 0},
+            {"uuid": first, "humidity": 0.5, "temperature": 21.0, "battery": 0.8, "timestamp": midnight},
+            {"uuid": second, "humidity": 0.6, "temperature": 22.0, "battery": 0.7, "timestamp": midnight + 1},
+            {"uuid": first, "humidity": 0.7, "temperature": 23.0, "battery": 0.6, "timestamp": midnight + 86_400_000},
+        ]
+        self.assertEqual(self.client.post("/api/sensor/data", json=records).status_code, 201)
+        self.assertEqual(self.client.get("/api/sensor/data", params={"from": midnight}).json(), records[1:])
+        self.assertEqual(self.client.get("/api/sensor/data", params={"to": midnight + 1}).json(), records[:2])
+        self.assertEqual(
+            self.client.get("/api/sensor/data", params={"from": midnight, "to": midnight + 1}).json(),
+            records[1:2],
+        )
+        self.assertEqual(self.client.get("/api/sensor/data", params={"from": 0, "to": 0}).json(), [])
+        self.assertEqual(
+            self.client.get("/api/sensor/data", params={"filter": first, "date": midnight,
+                                                        "from": midnight + 1, "to": midnight + 86_400_001}).json(),
+            [],
+        )
+        self.assertEqual(
+            self.client.get("/api/sensor/data", params={"filter": second, "date": midnight,
+                                                        "from": midnight, "to": midnight + 2}).json(),
+            records[2:3],
+        )
+        for params in ({"from": -1}, {"to": -1}, {"from": "bad"}, {"to": "bad"},
+                       {"from": midnight + 1, "to": midnight}):
+            self.assertEqual(self.client.get("/api/sensor/data", params=params).status_code, 422)
 
     def test_unregistered_sensor_and_invalid_batch_are_not_written(self):
         uuid = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"

@@ -88,7 +88,11 @@ def create_sensor_data(records: list[SensorData]):
 def get_sensor_data(
     filter: Annotated[list[UUID] | None, Query()] = None,
     date: Annotated[int | None, Query(ge=0)] = None,
+    from_: Annotated[int | None, Query(alias="from", ge=0)] = None,
+    to: Annotated[int | None, Query(ge=0)] = None,
 ):
+    if from_ is not None and to is not None and from_ > to:
+        raise HTTPException(status_code=422, detail="from must be less than or equal to to.")
     conditions = []
     parameters = []
     if filter is not None:
@@ -104,6 +108,12 @@ def get_sensor_data(
             raise HTTPException(status_code=422, detail="Invalid UTC date timestamp.") from exc
         conditions.append("timestamp >= ? AND timestamp < ?")
         parameters.extend((int(start.timestamp() * 1000), int(end.timestamp() * 1000)))
+    if from_ is not None:
+        conditions.append("timestamp >= ?")
+        parameters.append(from_)
+    if to is not None:
+        conditions.append("timestamp < ?")
+        parameters.append(to)
 
     query = "SELECT uuid, humidity, temperature, battery, timestamp FROM sensor_data"
     if conditions:
