@@ -50,3 +50,7 @@ These are planned or under development, **not shipped yet**:
 - AI integration for personalized plant-care advice based on historical data
 
 See the [backend README](backend/README.md) and [frontend README](frontend/README.md) for more detail.
+
+## Notes to self
+
+1. The sensors are not going to be sending the requests at exactly the same times, their timings are offset by an arbitrary number of seconds/milliseconds. I guess there should be a "aggregation period" of like 5-10 seconds (because the sensors send out data on ~30 second interval). I'll make a design proper in a bit. Just a thing to consider for now.
