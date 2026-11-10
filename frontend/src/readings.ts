@@ -20,6 +20,16 @@ export function nearestReading(readings: Reading[], time: number) {
   )
 }
 
+export function selectedSourceIds(selectedIds: string[] | null, sources: Source[]): string[] {
+  return (selectedIds ?? sources.map((source) => source.id))
+    .filter((id) => sources.some((source) => source.id === id))
+}
+
+export function toggleSelectedSource(selectedIds: string[] | null, sources: Source[], id: string): string[] {
+  const current = selectedSourceIds(selectedIds, sources)
+  return current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+}
+
 export function groupSources(readings: Reading[], sensors: Sensor[]): Source[] {
   const grouped = new Map<string, Source>()
   const names = new Map(sensors.map((sensor) => [sensor.uuid, sensor.description]))

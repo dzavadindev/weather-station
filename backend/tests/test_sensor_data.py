@@ -1,8 +1,6 @@
 import os
-import sqlite3
 import tempfile
 import unittest
-from contextlib import closing
 from datetime import UTC, datetime
 from itertools import pairwise
 from pathlib import Path
@@ -158,15 +156,38 @@ class SensorDataTests(unittest.TestCase):
             self.assertEqual(self.client.post("/api/sensor/data", json=[valid, invalid]).status_code, 422)
         self.assertEqual(self.client.get("/api/sensor/data").json(), [])
 
-    def test_seed_produces_one_minute_intervals(self):
+    def test_seed_produces_two_realistic_sources(self):
         seed_database()
-        with closing(sqlite3.connect(self.database_path)) as connection:
-            rows = connection.execute("SELECT timestamp FROM sensor_data ORDER BY timestamp").fetchall()
-        self.assertEqual(len(rows), 48)
-        self.assertTrue(all(right[0] - left[0] == 60_000 for left, right in pairwise(rows)))
-        self.assertEqual(len(self.client.get("/api/sensor/data").json()), 48)
-        self.assertEqual(len(self.client.get("/api/sensor/").json()), 1)
-        self.assertIsInstance(UUID(self.client.get("/api/sensor/").json()[0]["uuid"]), UUID)
+        sensors = self.client.get("/api/sensor/").json()
+        self.assertEqual({sensor["description"] for sensor in sensors}, {"Bathroom", "Balcony"})
+        self.assertEqual(len({sensor["uuid"] for sensor in sensors}), 2)
+        for sensor in sensors:
+            self.assertIsInstance(UUID(sensor["uuid"]), UUID)
+
+        readings = self.client.get("/api/sensor/data", params={"period": "day"}).json()
+        self.assertEqual(len(readings), 96)
+        for sensor in sensors:
+            source = [reading for reading in readings if reading["uuid"] == sensor["uuid"]]
+            self.assertEqual(len(source), 48)
+            self.assertTrue(all(right["timestamp"] - left["timestamp"] == 30 * 60_000
+                                for left, right in pairwise(source)))
+            temperatures = [reading["temperature"] for reading in source]
+            humidities = [reading["humidity"] for reading in source]
+            batteries = [reading["battery"] for reading in source]
+            if sensor["description"] == "Bathroom":
+                self.assertTrue(all(23 <= value <= 25 for value in temperatures))
+                self.assertTrue(all(0.45 <= value <= 0.50 for value in humidities))
+                self.assertLess(max(temperatures) - min(temperatures), 1)
+            else:
+                self.assertTrue(all(4 <= value <= 10 for value in temperatures))
+                self.assertTrue(all(0.30 <= value <= 0.45 for value in humidities))
+                self.assertLess(temperatures[0], temperatures[23])
+                self.assertGreater(temperatures[23], temperatures[-1])
+            self.assertTrue(all(0 <= value <= 1 for value in batteries))
+            self.assertEqual(
+                self.client.get("/api/sensor/data", params={"period": "day", "device": sensor["uuid"]}).json(),
+                source,
+            )
 
 
 

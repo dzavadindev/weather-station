@@ -25,7 +25,7 @@ By default, data is stored in `backend/data/sensor_data.sqlite3`. Set `DATABASE_
 uv run python -m backend.seed
 ```
 
-Registers a stable `Demo sensor` UUID (if not already present) and inserts 48 readings for it, one minute apart, ending at the current UTC minute. Running it again adds another 48 readings.
+Registers stable `Bathroom` and `Balcony` UUIDs (if not already present) and inserts 48 readings per sensor, 30 minutes apart, ending at the current UTC minute. Bathroom stays near 23–25 °C and 45–50% humidity; Balcony warms from roughly 4–5 °C toward 9–10 °C and cools again, with 30–45% humidity. Small deterministic variations keep the curves realistic. Rerunning the seed adds another 96 readings; it does not delete existing data, including sensors from an earlier seed version. For exactly these two sensors, start with a fresh database.
 
 ## Tests
 

@@ -118,7 +118,7 @@ export function ChartPlot({ metric, period, sources, readings, selectedIds, sele
           </text>
         ))}
 
-        {/* One polyline per sensor: M starts the path, L joins later samples. A selected legend item fades the other sensors, not the selected one. */}
+        {/* One polyline per sensor: M starts the path, L joins later samples. A focused legend item fades the others; none selected leaves all lines undimmed. */}
         {sources.map((source) => (
           <path key={source.id} className={`data-line ${selectedIds.length && !selectedIds.includes(source.id) ? 'dimmed' : ''}`}
             stroke={source.color} d={source.readings.map((reading, index) =>
@@ -130,7 +130,7 @@ export function ChartPlot({ metric, period, sources, readings, selectedIds, sele
         {selectedX !== null && <>
           <line className="selection-line" x1={selectedX} x2={selectedX} y1={plot.top} y2={plot.top + chartHeight} />
           <circle className="selection-anchor" cx={selectedX} cy={plot.top} r="7" />
-          {sources.filter((source) => !selectedIds.length || selectedIds.includes(source.id)).map((source) => {
+          {sources.filter((source) => selectedIds.includes(source.id)).map((source) => {
             const reading = nearestReading(source.readings, selectedTime!)
             return <circle className="selection-point" key={source.id} cx={xFor(reading.timestamp)}
               cy={yFor(valueOf(reading, metric))} r="5" fill={source.color} />

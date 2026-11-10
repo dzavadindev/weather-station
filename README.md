@@ -36,6 +36,7 @@ uv run python -m unittest discover -s tests
 From `frontend/`:
 
 ```sh
+yarn test
 yarn lint
 yarn build
 ```

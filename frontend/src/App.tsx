@@ -4,7 +4,7 @@ import { ChartPanel } from './components/ChartPanel'
 import { DashboardHeader } from './components/DashboardHeader'
 import { Overview } from './components/Overview'
 import { SelectedReadings } from './components/SelectedReadings'
-import { groupSources } from './readings'
+import { groupSources, selectedSourceIds, toggleSelectedSource } from './readings'
 import { useReadings } from './useReadings'
 import './App.scss'
 
@@ -17,8 +17,7 @@ function App() {
   const [retry, setRetry] = useState(0)
   const { readings, sensors, latest, dayError, dayLoading, loading, error } = useReadings(period, requestTime, retry)
   const sources = useMemo(() => groupSources(readings, sensors), [readings, sensors])
-  const activeIds = (selectedIds ?? sources.map((source) => source.id))
-    .filter((id) => sources.some((source) => source.id === id))
+  const activeIds = selectedSourceIds(selectedIds, sources)
 
   function changePeriod(next: Period) {
     if (next === period) return
@@ -27,10 +26,7 @@ function App() {
   }
 
   function toggleSensor(id: string) {
-    setSelectedIds((ids) => {
-      const current = ids ?? sources.map((source) => source.id)
-      return current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
-    })
+    setSelectedIds((ids) => toggleSelectedSource(ids, sources, id))
   }
 
   function retryRequest() {
