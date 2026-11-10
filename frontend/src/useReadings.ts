@@ -1,30 +1,29 @@
 import { useEffect, useState } from 'react'
-import { fetchReadings } from './api'
-import { periods } from './consts'
-import type { Period, Reading } from './consts'
+import { fetchReadings, fetchSensors } from './api'
+import type { Period, Reading, Sensor } from './consts'
 
 type Result = { key: string; data: Reading[]; error: string | null }
+type HistoryResult = Result & { sensors: Sensor[] }
 
 export function useReadings(period: Period, requestTime: number, retry: number) {
   const historyKey = `${period}:${requestTime}:${retry}`
   const dayKey = `${requestTime}:${retry}`
-  const [history, setHistory] = useState<Result>({ key: '', data: [], error: null })
+  const [history, setHistory] = useState<HistoryResult>({ key: '', data: [], sensors: [], error: null })
   const [day, setDay] = useState<Result>({ key: '', data: [], error: null })
 
   useEffect(() => {
     const controller = new AbortController()
-    const duration = periods.find((item) => item.id === period)!.duration
-    fetchReadings(duration ? requestTime - duration : 0, requestTime, controller.signal)
-      .then((data) => setHistory({ key: historyKey, data, error: null }))
+    Promise.all([fetchReadings(period, controller.signal), fetchSensors(controller.signal)])
+      .then(([data, sensors]) => setHistory({ key: historyKey, data, sensors, error: null }))
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted) setHistory({ key: historyKey, data: [], error: reason instanceof Error ? reason.message : 'Unable to load readings' })
+        if (!controller.signal.aborted) setHistory({ key: historyKey, data: [], sensors: [], error: reason instanceof Error ? reason.message : 'Unable to load readings' })
       })
     return () => controller.abort()
   }, [period, requestTime, historyKey])
 
   useEffect(() => {
     const controller = new AbortController()
-    fetchReadings(requestTime - 86_400_000, requestTime, controller.signal)
+    fetchReadings('day', controller.signal)
       .then((data) => setDay({ key: dayKey, data, error: null }))
       .catch(() => {
         if (!controller.signal.aborted) setDay({ key: dayKey, data: [], error: 'Unable to load latest readings' })
@@ -34,6 +33,7 @@ export function useReadings(period: Period, requestTime: number, retry: number) 
 
   return {
     readings: history.key === historyKey ? history.data : [],
+    sensors: history.key === historyKey ? history.sensors : [],
     loading: history.key !== historyKey,
     error: history.key === historyKey ? history.error : null,
     latest: day.key === dayKey ? day.data.at(-1) : undefined,

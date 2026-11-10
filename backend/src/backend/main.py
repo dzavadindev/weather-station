@@ -1,6 +1,6 @@
 import sqlite3
-from datetime import UTC, datetime, timedelta
-from typing import Annotated
+from time import time_ns
+from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Query
@@ -86,28 +86,26 @@ def create_sensor_data(records: list[SensorData]):
 
 @app.get("/api/sensor/data", response_model=list[SensorData])
 def get_sensor_data(
-    filter: Annotated[list[UUID] | None, Query()] = None,
-    date: Annotated[int | None, Query(ge=0)] = None,
+    device: Annotated[list[UUID] | None, Query()] = None,
+    period: Literal["day", "week", "month", "all"] | None = None,
     from_: Annotated[int | None, Query(alias="from", ge=0)] = None,
     to: Annotated[int | None, Query(ge=0)] = None,
 ):
+    if period is not None and (from_ is not None or to is not None):
+        raise HTTPException(status_code=422, detail="period cannot be combined with from or to.")
     if from_ is not None and to is not None and from_ > to:
         raise HTTPException(status_code=422, detail="from must be less than or equal to to.")
     conditions = []
     parameters = []
-    if filter is not None:
-        uuids = [str(uuid) for uuid in filter]
+    if device is not None:
+        uuids = [str(uuid) for uuid in device]
         conditions.append(f"uuid IN ({', '.join('?' for _ in uuids)})")
         parameters.extend(uuids)
-    if date is not None:
-        try:
-            day = datetime.fromtimestamp(date / 1000, UTC).date()
-            start = datetime.combine(day, datetime.min.time(), UTC)
-            end = start + timedelta(days=1)
-        except (OverflowError, ValueError) as exc:
-            raise HTTPException(status_code=422, detail="Invalid UTC date timestamp.") from exc
-        conditions.append("timestamp >= ? AND timestamp < ?")
-        parameters.extend((int(start.timestamp() * 1000), int(end.timestamp() * 1000)))
+    if period is not None and period != "all":
+        duration = {"day": 1, "week": 7, "month": 30}[period] * 86_400_000
+        now = time_ns() // 1_000_000
+        conditions.append("timestamp >= ? AND timestamp <= ?")
+        parameters.extend((now - duration, now))
     if from_ is not None:
         conditions.append("timestamp >= ?")
         parameters.append(from_)

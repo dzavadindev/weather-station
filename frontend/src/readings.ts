@@ -1,5 +1,5 @@
 import { sensorColors } from './consts'
-import type { Metric, Reading, Source } from './consts'
+import type { Metric, Reading, Sensor, Source } from './consts'
 
 export function valueOf(reading: Reading, metric: Metric) {
   return metric === 'temperature' ? reading.temperature : reading[metric] * 100
@@ -20,14 +20,15 @@ export function nearestReading(readings: Reading[], time: number) {
   )
 }
 
-export function groupSources(readings: Reading[]): Source[] {
+export function groupSources(readings: Reading[], sensors: Sensor[]): Source[] {
   const grouped = new Map<string, Source>()
+  const names = new Map(sensors.map((sensor) => [sensor.uuid, sensor.description]))
   for (const reading of readings) {
-    const id = reading.sensor_id == null ? 'station' : String(reading.sensor_id)
+    const id = reading.uuid
     if (!grouped.has(id)) {
       grouped.set(id, {
         id,
-        name: reading.sensor_name || (id === 'station' ? 'Weather station' : `Sensor ${id}`),
+        name: names.get(id) ?? `Sensor ${id}`,
         color: sensorColors[grouped.size % sensorColors.length],
         readings: [],
       })

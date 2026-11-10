@@ -2,13 +2,14 @@ export type Metric = 'temperature' | 'humidity' | 'battery'
 export type Period = 'day' | 'week' | 'month' | 'all'
 
 export type Reading = {
+  uuid: string
   temperature: number
   humidity: number
   battery: number
   timestamp: number
-  sensor_id?: string
-  sensor_name?: string
 }
+
+export type Sensor = { uuid: string; description: string }
 
 export type Source = { id: string; name: string; color: string; readings: Reading[] }
 

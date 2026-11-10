@@ -11,13 +11,14 @@ import './App.scss'
 function App() {
   const [metric, setMetric] = useState<Metric>('temperature')
   const [period, setPeriod] = useState<Period>('day')
-  const [selectedIds, setSelectedIds] = useState<string[]>(['station'])
+  const [selectedIds, setSelectedIds] = useState<string[] | null>(null)
   const [selectedTime, setSelectedTime] = useState<number | null>(null)
   const [requestTime, setRequestTime] = useState(() => Date.now())
   const [retry, setRetry] = useState(0)
-  const { readings, latest, dayError, dayLoading, loading, error } = useReadings(period, requestTime, retry)
-  const sources = useMemo(() => groupSources(readings), [readings])
-  const activeIds = selectedIds.filter((id) => sources.some((source) => source.id === id))
+  const { readings, sensors, latest, dayError, dayLoading, loading, error } = useReadings(period, requestTime, retry)
+  const sources = useMemo(() => groupSources(readings, sensors), [readings, sensors])
+  const activeIds = (selectedIds ?? sources.map((source) => source.id))
+    .filter((id) => sources.some((source) => source.id === id))
 
   function changePeriod(next: Period) {
     if (next === period) return
@@ -26,7 +27,10 @@ function App() {
   }
 
   function toggleSensor(id: string) {
-    setSelectedIds((ids) => ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id])
+    setSelectedIds((ids) => {
+      const current = ids ?? sources.map((source) => source.id)
+      return current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+    })
   }
 
   function retryRequest() {

@@ -49,7 +49,7 @@ class SensorDataTests(unittest.TestCase):
             "Sensor 3",
         )
 
-    def test_post_and_get_filtered_by_sensor_and_utc_day(self):
+    def test_post_and_get_filtered_by_device(self):
         first = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
         second = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"
         for uuid in (first, second):
@@ -64,18 +64,13 @@ class SensorDataTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json(), {"inserted": 3})
         self.assertEqual(self.client.get("/api/sensor/data").json(), records)
+        self.assertEqual(self.client.get("/api/sensor/data", params={"device": first}).json(), records[::2])
         self.assertEqual(
-            self.client.get("/api/sensor/data", params={"filter": first, "date": midnight + 5000}).json(),
-            records[:1],
+            self.client.get("/api/sensor/data", params=[("device", first), ("device", second)]).json(),
+            records,
         )
-        self.assertEqual(
-            self.client.get("/api/sensor/data", params=[("filter", first), ("filter", second), ("date", midnight)]).json(),
-            records[:2],
-        )
-        self.assertEqual(self.client.get("/api/sensor/data", params={"filter": second}).json(), records[1:2])
-        self.assertEqual(self.client.get("/api/sensor/data", params={"date": midnight}).json(), records[:2])
-        self.assertEqual(self.client.get("/api/sensor/data?date=bad").status_code, 422)
-        self.assertEqual(self.client.get("/api/sensor/data?filter=bad").status_code, 422)
+        self.assertEqual(self.client.get("/api/sensor/data", params={"device": second}).json(), records[1:2])
+        self.assertEqual(self.client.get("/api/sensor/data?device=bad").status_code, 422)
 
     def test_get_filtered_by_time_range(self):
         first = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
@@ -98,17 +93,50 @@ class SensorDataTests(unittest.TestCase):
         )
         self.assertEqual(self.client.get("/api/sensor/data", params={"from": 0, "to": 0}).json(), [])
         self.assertEqual(
-            self.client.get("/api/sensor/data", params={"filter": first, "date": midnight,
+            self.client.get("/api/sensor/data", params={"device": first,
                                                         "from": midnight + 1, "to": midnight + 86_400_001}).json(),
-            [],
+            records[3:],
         )
         self.assertEqual(
-            self.client.get("/api/sensor/data", params={"filter": second, "date": midnight,
+            self.client.get("/api/sensor/data", params={"device": second,
                                                         "from": midnight, "to": midnight + 2}).json(),
             records[2:3],
         )
         for params in ({"from": -1}, {"to": -1}, {"from": "bad"}, {"to": "bad"},
                        {"from": midnight + 1, "to": midnight}):
+            self.assertEqual(self.client.get("/api/sensor/data", params=params).status_code, 422)
+
+    def test_get_filtered_by_period(self):
+        first = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
+        second = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"
+        for uuid in (first, second):
+            self.client.post("/api/sensor/register", json={"uuid": uuid})
+        now = int(datetime(2025, 2, 2, tzinfo=UTC).timestamp() * 1000)
+        day = 86_400_000
+        records = [
+            {"uuid": uuid, "humidity": 0.5, "temperature": 21.0, "battery": 0.9, "timestamp": timestamp}
+            for uuid, timestamp in (
+                (first, now - 30 * day - 1),
+                (first, now - 30 * day),
+                (second, now - 7 * day),
+                (first, now - day),
+                (second, now),
+                (first, now + 1),
+            )
+        ]
+        self.assertEqual(self.client.post("/api/sensor/data", json=records).status_code, 201)
+        with patch("backend.main.time_ns", return_value=now * 1_000_000):
+            self.assertEqual(self.client.get("/api/sensor/data", params={"period": "day"}).json(), records[3:5])
+            self.assertEqual(self.client.get("/api/sensor/data", params={"period": "week"}).json(), records[2:5])
+            self.assertEqual(self.client.get("/api/sensor/data", params={"period": "month"}).json(), records[1:5])
+            self.assertEqual(self.client.get("/api/sensor/data", params={"period": "all"}).json(), records)
+            self.assertEqual(self.client.get("/api/sensor/data").json(), records)
+            self.assertEqual(
+                self.client.get("/api/sensor/data", params={"device": second, "period": "week"}).json(),
+                [records[2], records[4]],
+            )
+        for params in ({"period": "year"}, {"period": ""}, {"period": "day", "from": 0},
+                       {"period": "all", "to": now}):
             self.assertEqual(self.client.get("/api/sensor/data", params=params).status_code, 422)
 
     def test_unregistered_sensor_and_invalid_batch_are_not_written(self):
