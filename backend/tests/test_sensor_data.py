@@ -137,6 +137,41 @@ class SensorDataTests(unittest.TestCase):
                        {"period": "all", "to": now}):
             self.assertEqual(self.client.get("/api/sensor/data", params=params).status_code, 422)
 
+    def test_today_summaries_average_per_sensor_and_use_latest_battery(self):
+        self.assertEqual(self.client.get("/api/sensor/data/today").json(), [])
+        first = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
+        second = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"
+        third = "cccccccc-cccc-4ccc-accc-cccccccccccc"
+        for uuid in (first, second, third):
+            self.client.post("/api/sensor/register", json={"uuid": uuid})
+        now = int(datetime(2025, 2, 2, tzinfo=UTC).timestamp() * 1000)
+        day = 86_400_000
+        records = [
+            {"uuid": uuid, "humidity": humidity, "temperature": temperature,
+             "battery": battery, "timestamp": timestamp}
+            for uuid, humidity, temperature, battery, timestamp in (
+                (first, 0.9, 100.0, 0.9, now - day - 1),
+                (first, 0.4, 20.0, 0.9, now - day),
+                (second, 0.35, 6.0, 0.8, now - 1000),
+                (first, 0.6, 24.0, 0.7, now - 500),
+                (first, 0.8, 26.0, 0.3, now),
+                (first, 0.4, 30.0, 0.2, now),
+                (first, 0.9, 100.0, 0.1, now + 1),
+            )
+        ]
+        self.assertEqual(self.client.post("/api/sensor/data", json=records).status_code, 201)
+        with patch("backend.main.time_ns", return_value=now * 1_000_000):
+            summaries = self.client.get("/api/sensor/data/today").json()
+        self.assertEqual([row["uuid"] for row in summaries], [first, second])
+        self.assertAlmostEqual(summaries[0]["average_humidity"], 0.55)
+        self.assertAlmostEqual(summaries[0]["average_temperature"], 25.0)
+        self.assertEqual(summaries[0]["battery"], 0.2)
+        self.assertEqual(summaries[0]["latest_timestamp"], now)
+        self.assertAlmostEqual(summaries[1]["average_humidity"], 0.35)
+        self.assertAlmostEqual(summaries[1]["average_temperature"], 6.0)
+        self.assertEqual(summaries[1]["battery"], 0.8)
+        self.assertEqual(summaries[1]["latest_timestamp"], now - 1000)
+
     def test_unregistered_sensor_and_invalid_batch_are_not_written(self):
         uuid = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
         other = "bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb"

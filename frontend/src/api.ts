@@ -1,9 +1,15 @@
-import type { Period, Reading, Sensor } from './consts'
+import type { DaySummary, Period, Reading, Sensor } from './consts'
 
 export async function fetchSensors(signal: AbortSignal): Promise<Sensor[]> {
   const response = await fetch('/api/sensor/', { signal })
   if (!response.ok) throw new Error(`Request failed (${response.status})`)
   return response.json() as Promise<Sensor[]>
+}
+
+export async function fetchTodaySummaries(signal: AbortSignal): Promise<DaySummary[]> {
+  const response = await fetch('/api/sensor/data/today', { signal })
+  if (!response.ok) throw new Error(`Request failed (${response.status})`)
+  return response.json() as Promise<DaySummary[]>
 }
 
 export async function fetchReadings(period: Period, signal: AbortSignal): Promise<Reading[]> {

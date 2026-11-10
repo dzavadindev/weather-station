@@ -29,6 +29,13 @@ class SensorData(BaseModel):
     timestamp: int = Field(strict=True, ge=0)
 
 
+class SensorDaySummary(BaseModel):
+    uuid: UUID
+    average_humidity: float
+    average_temperature: float
+    battery: float
+    latest_timestamp: int
+
 
 @app.get("/api/health")
 def health():
@@ -82,6 +89,26 @@ def create_sensor_data(records: list[SensorData]):
         except sqlite3.IntegrityError as exc:
             raise HTTPException(status_code=400, detail="All sensor UUIDs must be registered.") from exc
     return {"inserted": len(records)}
+
+
+@app.get("/api/sensor/data/today", response_model=list[SensorDaySummary])
+def get_today_summaries():
+    now = time_ns() // 1_000_000
+    with connect() as connection:
+        rows = connection.execute("""
+            SELECT uuid, average_humidity, average_temperature, battery, timestamp AS latest_timestamp
+            FROM (
+                SELECT uuid, battery, timestamp,
+                       AVG(humidity) OVER (PARTITION BY uuid) AS average_humidity,
+                       AVG(temperature) OVER (PARTITION BY uuid) AS average_temperature,
+                       ROW_NUMBER() OVER (PARTITION BY uuid ORDER BY timestamp DESC, id DESC) AS recency
+                FROM sensor_data
+                WHERE timestamp >= ? AND timestamp <= ?
+            )
+            WHERE recency = 1
+            ORDER BY uuid
+        """, (now - 86_400_000, now)).fetchall()
+    return [dict(row) for row in rows]
 
 
 @app.get("/api/sensor/data", response_model=list[SensorData])

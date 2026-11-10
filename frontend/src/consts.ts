@@ -9,6 +9,14 @@ export type Reading = {
   timestamp: number
 }
 
+export type DaySummary = {
+  uuid: string
+  average_temperature: number
+  average_humidity: number
+  battery: number
+  latest_timestamp: number
+}
+
 export type Sensor = { uuid: string; description: string }
 
 export type Source = { id: string; name: string; color: string; readings: Reading[] }

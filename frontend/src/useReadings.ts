@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react'
-import { fetchReadings, fetchSensors } from './api'
-import type { Period, Reading, Sensor } from './consts'
+import { fetchReadings, fetchSensors, fetchTodaySummaries } from './api'
+import type { DaySummary, Period, Reading, Sensor } from './consts'
 
-type Result = { key: string; data: Reading[]; error: string | null }
+type Result<T> = { key: string; data: T[]; error: string | null }
 type SensorResult = { key: string; data: Sensor[]; error: string | null }
 
 export function useReadings(period: Period, requestTime: number, retry: number) {
   const historyKey = `${period}:${requestTime}:${retry}`
   const dayKey = `${requestTime}:${retry}`
-  const [history, setHistory] = useState<Result>({ key: '', data: [], error: null })
-  const [day, setDay] = useState<Result>({ key: '', data: [], error: null })
+  const [history, setHistory] = useState<Result<Reading>>({ key: '', data: [], error: null })
+  const [day, setDay] = useState<Result<DaySummary>>({ key: '', data: [], error: null })
   const [catalog, setCatalog] = useState<SensorResult>({ key: '', data: [], error: null })
 
   useEffect(() => {
@@ -24,10 +24,10 @@ export function useReadings(period: Period, requestTime: number, retry: number) 
 
   useEffect(() => {
     const controller = new AbortController()
-    fetchReadings('day', controller.signal)
+    fetchTodaySummaries(controller.signal)
       .then((data) => setDay({ key: dayKey, data, error: null }))
       .catch(() => {
-        if (!controller.signal.aborted) setDay({ key: dayKey, data: [], error: 'Unable to load latest readings' })
+        if (!controller.signal.aborted) setDay({ key: dayKey, data: [], error: 'Unable to load today’s summary' })
       })
     return () => controller.abort()
   }, [requestTime, dayKey])
@@ -49,7 +49,7 @@ export function useReadings(period: Period, requestTime: number, retry: number) 
     sensorsError: catalog.key === dayKey ? catalog.error : null,
     loading: history.key !== historyKey,
     error: history.key === historyKey ? history.error : null,
-    dayReadings: day.key === dayKey ? day.data : [],
+    daySummaries: day.key === dayKey ? day.data : [],
     dayError: day.key === dayKey ? day.error : null,
     dayLoading: day.key !== dayKey,
   }

@@ -1,11 +1,11 @@
 import { sensorColors } from './consts'
 import type { Metric, Reading, Sensor, Source } from './consts'
 
-export function valueOf(reading: Reading, metric: Metric) {
+export function valueOf(reading: Pick<Reading, Metric>, metric: Metric) {
   return metric === 'temperature' ? reading.temperature : reading[metric] * 100
 }
 
-export function formattedValue(reading: Reading | undefined, metric: Metric) {
+export function formattedValue(reading: Pick<Reading, Metric> | undefined, metric: Metric) {
   if (!reading) return '—'
   return `${valueOf(reading, metric).toFixed(1)}${metric === 'temperature' ? '°' : '%'}${metric === 'temperature' ? 'C' : ''}`
 }

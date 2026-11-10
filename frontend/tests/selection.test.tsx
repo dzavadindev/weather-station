@@ -12,10 +12,17 @@ const readings = sensors.map((sensor, index) => ({
   uuid: sensor.uuid, temperature: 24 - index * 16, humidity: 0.48 - index * 0.1,
   battery: 0.9, timestamp: Date.now() - 60_000,
 }))
+const summaries = sensors.map((sensor, index) => ({
+  uuid: sensor.uuid, average_temperature: 23.5 - index * 16,
+  average_humidity: 0.46 - index * 0.1, battery: 0.82 - index * 0.08,
+  latest_timestamp: readings[index].timestamp,
+}))
 
-function mockApi(availableSensors = sensors, availableReadings = readings) {
+function mockApi(availableSensors = sensors, availableReadings = readings, availableSummaries = summaries) {
   vi.stubGlobal('fetch', vi.fn((url: string) => {
-    const data = url === '/api/sensor/' ? availableSensors : url === '/api/sensor/data?period=day' ? availableReadings : null
+    const data = url === '/api/sensor/' ? availableSensors
+      : url === '/api/sensor/data/today' ? availableSummaries
+      : url === '/api/sensor/data?period=day' ? availableReadings : null
     if (data === null) throw new Error(`Unexpected request: ${url}`)
     return Promise.resolve({ ok: true, json: async () => data })
   }))
@@ -52,41 +59,45 @@ function selectedReadings() {
 
 test('Overview defaults to Bathroom and switches its cards to Balcony without changing chart selection', async () => {
   const user = await loadDashboard()
-  const overview = screen.getByRole('region', { name: 'Latest readings in the last 24 hours' })
+  const overview = screen.getByRole('region', { name: 'Sensor summary for the last 24 hours' })
   expect(screen.getByRole('radio', { name: 'Bathroom' })).toBeChecked()
-  expect(within(overview).getByText('24.0°C')).toBeInTheDocument()
-  expect(within(overview).getByText('48.0%')).toBeInTheDocument()
+  expect(within(overview).getByText('23.5°C')).toBeInTheDocument()
+  expect(within(overview).getByText('46.0%')).toBeInTheDocument()
+  expect(within(overview).getByText('82.0%')).toBeInTheDocument()
+  expect(within(overview).getAllByText('Average over the last 24 hours')).toHaveLength(2)
+  expect(within(overview).getByText(/Last recorded/)).toBeInTheDocument()
 
   await user.click(screen.getByRole('radio', { name: 'Balcony' }))
   expect(screen.getByRole('radio', { name: 'Balcony' })).toBeChecked()
   expect(screen.getByRole('radio', { name: 'Bathroom' })).not.toBeChecked()
-  expect(within(overview).getByText('8.0°C')).toBeInTheDocument()
-  expect(within(overview).getByText('38.0%')).toBeInTheDocument()
-  expect(within(overview).queryByText('24.0°C')).not.toBeInTheDocument()
+  expect(within(overview).getByText('7.5°C')).toBeInTheDocument()
+  expect(within(overview).getByText('36.0%')).toBeInTheDocument()
+  expect(within(overview).getByText('74.0%')).toBeInTheDocument()
+  expect(within(overview).queryByText('23.5°C')).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Bathroom, selected' })).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Balcony, selected' })).toBeInTheDocument()
 
   screen.getByRole('radio', { name: 'Balcony' }).focus()
   await user.keyboard('{ArrowLeft}')
   expect(screen.getByRole('radio', { name: 'Bathroom' })).toBeChecked()
-  expect(within(overview).getByText('24.0°C')).toBeInTheDocument()
+  expect(within(overview).getByText('23.5°C')).toBeInTheDocument()
 })
 
 test('Overview shows an empty state when the chosen sensor has no recent readings', async () => {
-  mockApi(sensors, [readings[0]])
+  mockApi(sensors, [readings[0]], [summaries[0]])
   const user = userEvent.setup()
   render(<App />)
   await screen.findByRole('radio', { name: 'Balcony' })
   await user.click(screen.getByRole('radio', { name: 'Balcony' }))
-  const overview = screen.getByRole('region', { name: 'Latest readings in the last 24 hours' })
+  const overview = screen.getByRole('region', { name: 'Sensor summary for the last 24 hours' })
   expect(within(overview).getAllByText('No readings in the last 24 hours')).toHaveLength(3)
   expect(within(overview).getAllByText('—')).toHaveLength(3)
 })
 
 test('Overview handles a station without registered sensors', async () => {
-  mockApi([], [])
+  mockApi([], [], [])
   render(<App />)
-  const overview = screen.getByRole('region', { name: 'Latest readings in the last 24 hours' })
+  const overview = screen.getByRole('region', { name: 'Sensor summary for the last 24 hours' })
   await within(overview).findByText('No sensors registered', { selector: '.overview-picker-empty' })
   expect(within(overview).queryAllByRole('radio')).toHaveLength(0)
 })
