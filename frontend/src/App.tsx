@@ -15,7 +15,7 @@ function App() {
   const [selectedTime, setSelectedTime] = useState<number | null>(null)
   const [requestTime, setRequestTime] = useState(() => Date.now())
   const [retry, setRetry] = useState(0)
-  const { readings, sensors, latest, dayError, dayLoading, loading, error } = useReadings(period, requestTime, retry)
+  const { readings, sensors, sensorsLoading, sensorsError, dayReadings, dayError, dayLoading, loading, error } = useReadings(period, requestTime, retry)
   const sources = useMemo(() => groupSources(readings, sensors), [readings, sensors])
   const activeIds = selectedSourceIds(selectedIds, sources)
 
@@ -37,7 +37,8 @@ function App() {
   return (
     <main className="dashboard">
       <DashboardHeader requestTime={requestTime} />
-      <Overview latest={latest} loading={dayLoading} error={dayError} />
+      <Overview sensors={sensors} readings={dayReadings}
+        loading={dayLoading || sensorsLoading} error={dayError ?? sensorsError} />
       <ChartPanel metric={metric} onMetricChange={setMetric} period={period} onPeriodChange={changePeriod}
         requestTime={requestTime} readings={readings} sources={sources} selectedIds={activeIds}
         onToggleSensor={toggleSensor} selectedTime={selectedTime} onSelectTime={setSelectedTime}

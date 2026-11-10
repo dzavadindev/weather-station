@@ -13,13 +13,15 @@ const readings = sensors.map((sensor, index) => ({
   battery: 0.9, timestamp: Date.now() - 60_000,
 }))
 
-beforeEach(() => {
+function mockApi(availableSensors = sensors, availableReadings = readings) {
   vi.stubGlobal('fetch', vi.fn((url: string) => {
-    const data = url === '/api/sensor/' ? sensors : url === '/api/sensor/data?period=day' ? readings : null
+    const data = url === '/api/sensor/' ? availableSensors : url === '/api/sensor/data?period=day' ? availableReadings : null
     if (data === null) throw new Error(`Unexpected request: ${url}`)
     return Promise.resolve({ ok: true, json: async () => data })
   }))
-})
+}
+
+beforeEach(() => mockApi())
 
 afterEach(() => {
   cleanup()
@@ -47,6 +49,47 @@ function lines() {
 function selectedReadings() {
   return document.querySelectorAll('.reading-row')
 }
+
+test('Overview defaults to Bathroom and switches its cards to Balcony without changing chart selection', async () => {
+  const user = await loadDashboard()
+  const overview = screen.getByRole('region', { name: 'Latest readings in the last 24 hours' })
+  expect(screen.getByRole('radio', { name: 'Bathroom' })).toBeChecked()
+  expect(within(overview).getByText('24.0°C')).toBeInTheDocument()
+  expect(within(overview).getByText('48.0%')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('radio', { name: 'Balcony' }))
+  expect(screen.getByRole('radio', { name: 'Balcony' })).toBeChecked()
+  expect(screen.getByRole('radio', { name: 'Bathroom' })).not.toBeChecked()
+  expect(within(overview).getByText('8.0°C')).toBeInTheDocument()
+  expect(within(overview).getByText('38.0%')).toBeInTheDocument()
+  expect(within(overview).queryByText('24.0°C')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Bathroom, selected' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Balcony, selected' })).toBeInTheDocument()
+
+  screen.getByRole('radio', { name: 'Balcony' }).focus()
+  await user.keyboard('{ArrowLeft}')
+  expect(screen.getByRole('radio', { name: 'Bathroom' })).toBeChecked()
+  expect(within(overview).getByText('24.0°C')).toBeInTheDocument()
+})
+
+test('Overview shows an empty state when the chosen sensor has no recent readings', async () => {
+  mockApi(sensors, [readings[0]])
+  const user = userEvent.setup()
+  render(<App />)
+  await screen.findByRole('radio', { name: 'Balcony' })
+  await user.click(screen.getByRole('radio', { name: 'Balcony' }))
+  const overview = screen.getByRole('region', { name: 'Latest readings in the last 24 hours' })
+  expect(within(overview).getAllByText('No readings in the last 24 hours')).toHaveLength(3)
+  expect(within(overview).getAllByText('—')).toHaveLength(3)
+})
+
+test('Overview handles a station without registered sensors', async () => {
+  mockApi([], [])
+  render(<App />)
+  const overview = screen.getByRole('region', { name: 'Latest readings in the last 24 hours' })
+  await within(overview).findByText('No sensors registered', { selector: '.overview-picker-empty' })
+  expect(within(overview).queryAllByRole('radio')).toHaveLength(0)
+})
 
 test('both sensors are selected by default and both readings appear when a time is picked', async () => {
   const user = await loadDashboard()

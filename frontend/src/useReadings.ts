@@ -3,20 +3,21 @@ import { fetchReadings, fetchSensors } from './api'
 import type { Period, Reading, Sensor } from './consts'
 
 type Result = { key: string; data: Reading[]; error: string | null }
-type HistoryResult = Result & { sensors: Sensor[] }
+type SensorResult = { key: string; data: Sensor[]; error: string | null }
 
 export function useReadings(period: Period, requestTime: number, retry: number) {
   const historyKey = `${period}:${requestTime}:${retry}`
   const dayKey = `${requestTime}:${retry}`
-  const [history, setHistory] = useState<HistoryResult>({ key: '', data: [], sensors: [], error: null })
+  const [history, setHistory] = useState<Result>({ key: '', data: [], error: null })
   const [day, setDay] = useState<Result>({ key: '', data: [], error: null })
+  const [catalog, setCatalog] = useState<SensorResult>({ key: '', data: [], error: null })
 
   useEffect(() => {
     const controller = new AbortController()
-    Promise.all([fetchReadings(period, controller.signal), fetchSensors(controller.signal)])
-      .then(([data, sensors]) => setHistory({ key: historyKey, data, sensors, error: null }))
+    fetchReadings(period, controller.signal)
+      .then((data) => setHistory({ key: historyKey, data, error: null }))
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted) setHistory({ key: historyKey, data: [], sensors: [], error: reason instanceof Error ? reason.message : 'Unable to load readings' })
+        if (!controller.signal.aborted) setHistory({ key: historyKey, data: [], error: reason instanceof Error ? reason.message : 'Unable to load readings' })
       })
     return () => controller.abort()
   }, [period, requestTime, historyKey])
@@ -31,12 +32,24 @@ export function useReadings(period: Period, requestTime: number, retry: number) 
     return () => controller.abort()
   }, [requestTime, dayKey])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchSensors(controller.signal)
+      .then((data) => setCatalog({ key: dayKey, data, error: null }))
+      .catch((reason: unknown) => {
+        if (!controller.signal.aborted) setCatalog({ key: dayKey, data: [], error: reason instanceof Error ? reason.message : 'Unable to load sensors' })
+      })
+    return () => controller.abort()
+  }, [dayKey])
+
   return {
     readings: history.key === historyKey ? history.data : [],
-    sensors: history.key === historyKey ? history.sensors : [],
+    sensors: catalog.key === dayKey ? catalog.data : [],
+    sensorsLoading: catalog.key !== dayKey,
+    sensorsError: catalog.key === dayKey ? catalog.error : null,
     loading: history.key !== historyKey,
     error: history.key === historyKey ? history.error : null,
-    latest: day.key === dayKey ? day.data.at(-1) : undefined,
+    dayReadings: day.key === dayKey ? day.data : [],
     dayError: day.key === dayKey ? day.error : null,
     dayLoading: day.key !== dayKey,
   }
