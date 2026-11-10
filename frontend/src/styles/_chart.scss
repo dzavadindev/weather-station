@@ -97,11 +97,11 @@ h3 {
   min-height: 415px;
 
   @media (max-width: 800px) {
-    grid-template-columns: 60px minmax(0, 1fr) 82px;
+    grid-template-columns: 60px minmax(0, 1fr) 92px;
   }
 
   @media (max-width: 600px) {
-    grid-template-columns: 46px minmax(0, 1fr) 42px;
+    grid-template-columns: 46px minmax(0, 1fr) 72px;
   }
 }
 
@@ -109,12 +109,13 @@ h3 {
   border-right: var(--border-divider);
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   flex-direction: column;
   gap: 13px;
-  padding-top: 65px;
+  padding-top: 24px;
 
   @media (max-width: 600px) {
-    padding-top: 49px;
+    padding-top: 20px;
   }
 }
 
@@ -343,82 +344,79 @@ h3 {
 
 .legend {
   border-left: var(--border-divider);
-  padding: 27px 12px 17px 7px;
+  padding: 18px 6px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: space-between;
   flex-direction: column;
+  gap: 8px;
   min-width: 0;
 
   @media (max-width: 600px) {
-    padding: 22px 6px 15px 3px;
+    padding: 14px 3px;
   }
 }
 
 .legend-title {
-  margin: 0 4px 17px 0;
+  width: 100%;
+  margin: 0;
   font-size: var(--font-size-2xs);
+  text-align: center;
 
   @media (max-width: 600px) {
-    display: none !important;
+    font-size: 9px;
   }
 }
 
 .legend-list {
   width: 100%;
-  max-height: 255px;
+  max-height: 300px;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 7px;
-  padding: 5px 4px 8px 0;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 4px;
   scrollbar-width: thin;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  flex-direction: column;
   width: 100%;
-  gap: 7px;
+  gap: 6px;
   border: 0;
   background: transparent;
-  padding: 5px 1px;
+  padding: 4px 0 12px;
   color: var(--color-legend-text);
 
   &:hover .legend-name,
   &:focus-visible .legend-name,
   &.chosen .legend-name {
     opacity: 1;
-    max-width: 75px;
-    white-space: normal;
   }
 
   &.chosen .legend-circle {
     box-shadow: 0 0 0 2px var(--source-color), 0 0 14px var(--source-color);
   }
-
-  @media (max-width: 800px) {
-    &.chosen .legend-name {
-      max-width: 45px;
-    }
-  }
 }
 
 .legend-name {
+  width: 100%;
   font-size: var(--font-size-2xs);
   font-weight: var(--font-weight-bold);
-  text-align: right;
+  text-align: center;
   line-height: 1.2;
-  opacity: 0;
-  max-width: 0;
+  opacity: .75;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  transition: max-width .2s, opacity .2s;
+  transition: opacity .2s;
 
   @media (max-width: 600px) {
-    display: none !important;
+    font-size: 9px;
   }
 }
 
@@ -440,19 +438,20 @@ h3 {
 }
 
 .legend-empty {
-  text-align: right;
+  margin: 0;
+  text-align: center;
   font-size: var(--font-size-xs);
   color: var(--color-legend-empty);
 }
 
 .legend-hint {
-  margin: auto 4px 0 0;
+  margin: 0;
   color: var(--color-legend-hint);
   font-size: var(--font-size-2xs);
-  text-align: right;
+  text-align: center;
 
   @media (max-width: 600px) {
-    display: none !important;
+    font-size: 9px;
   }
 }
 

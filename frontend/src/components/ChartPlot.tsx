@@ -118,9 +118,9 @@ export function ChartPlot({ metric, period, sources, readings, selectedIds, sele
           </text>
         ))}
 
-        {/* One polyline per sensor: M starts the path, L joins later samples. A focused legend item fades the others; none selected leaves all lines undimmed. */}
+        {/* One polyline per sensor: M starts the path, L joins later samples. Unselected sensors are dimmed. */}
         {sources.map((source) => (
-          <path key={source.id} className={`data-line ${selectedIds.length && !selectedIds.includes(source.id) ? 'dimmed' : ''}`}
+          <path key={source.id} className={`data-line ${!selectedIds.includes(source.id) ? 'dimmed' : ''}`}
             stroke={source.color} d={source.readings.map((reading, index) =>
               `${index ? 'L' : 'M'} ${xFor(reading.timestamp).toFixed(2)} ${yFor(valueOf(reading, metric)).toFixed(2)}`,
             ).join(' ')} />
